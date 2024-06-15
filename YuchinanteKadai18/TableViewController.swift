@@ -10,15 +10,17 @@ import UIKit
 
 class TableViewController: UITableViewController {
 
-    // UserDefaultsに保存するキー名
-    private let keyName = "Name"
-    private let keyCheck = "Check"
+    // アイテムの構造体を定義
+    struct Item {
+        var name: String
+        var check: Bool
+    }
 
     // アクセサリボタンがタップされたセルのインデックスパスを保持するプロパティ
     private var editIndexPath: IndexPath?
 
-    // テーブルビューに表示するアイテムの配列
-    private var items: [[String: Any]] = []
+    // アイテムの配列を保持するプロパティ
+    private var items: [Item] = []
 
     // 画面がロードされた時の処理
     override func viewDidLoad() {
@@ -26,10 +28,10 @@ class TableViewController: UITableViewController {
 
         // アイテムの初期化
         items = [
-            [keyName: "りんご", keyCheck: false],
-            [keyName: "みかん", keyCheck: true],
-            [keyName: "バナナ", keyCheck: false],
-            [keyName: "パイナップル", keyCheck: true],
+            Item(name: "りんご", check: false),
+            Item(name: "みかん", check: true),
+            Item(name: "バナナ", check: false),
+            Item(name: "パイナップル", check: true)
         ]
     }
 
@@ -45,7 +47,7 @@ class TableViewController: UITableViewController {
         // アイテムを取得
         let item = items[indexPath.row]
         // セルの表示を設定するメソッドを呼び出してセルを更新
-        cell.configure(name:  (item[keyName] as? String) ?? "", isChecked:  (item[keyCheck] as? Bool) ?? false)
+        cell.configure(name: item.name, isChecked: item.check)
         // 更新されたセルを返す
         return cell
     }
@@ -53,11 +55,9 @@ class TableViewController: UITableViewController {
     // ユーザーがテーブルビューのセルを選択した時の処理
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // チェック状態を反転させる
-        if let check = items[indexPath.row][keyCheck] as? Bool {
-            items[indexPath.row][keyCheck] = !check
-            // テーブルビューのセルを再読み込みして更新する
-            tableView.reloadRows(at: [indexPath], with: .automatic)
-        }
+        items[indexPath.row].check.toggle()
+        // テーブルビューのセルを再読み込みして更新する
+        tableView.reloadRows(at: [indexPath], with: .automatic)
     }
 
     // アクセサリボタンがタップされた時の処理
@@ -91,8 +91,10 @@ class TableViewController: UITableViewController {
                 if let indexPath = sender as? IndexPath {
                     let item = self.items[indexPath.row]
                     // 編集対象のアイテム名を渡す
-                    add.mode = .edit((item[keyName] as? String) ?? "")
+                    add.mode = .edit
+                    add.name = item.name
                 }
+                break
             default:
                 break
             }
@@ -104,8 +106,8 @@ class TableViewController: UITableViewController {
     }
     @IBAction func exitFromAddBySave(segue: UIStoryboardSegue) {
         if let add = segue.source as? AddItemViewController {
-            // アイテム名とチェック状態を辞書型に格納し、itemsに追加する
-            let item: [String: Any] = [keyName: add.name, keyCheck: false]
+            // アイテム名を追加する
+            let item = Item(name: add.name, check: false)
             items.append(item)
             let indexPath = IndexPath(row: items.count - 1, section: 0)
             // テーブルビューに行を追加する
@@ -120,7 +122,7 @@ class TableViewController: UITableViewController {
         if let add = segue.source as? AddItemViewController {
             if let indexPath = editIndexPath {
                 // アイテム名を更新する
-                items[indexPath.row][keyName] = add.name
+                items[indexPath.row].name = add.name
                 // テーブルビューの行を再読み込みする
                 tableView.reloadRows(at: [indexPath], with: .automatic)
             }

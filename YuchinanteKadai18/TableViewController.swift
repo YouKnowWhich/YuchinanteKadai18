@@ -13,7 +13,11 @@ class TableViewController: UITableViewController {
     // アイテムの構造体を定義
     struct Item {
         var name: String
-        var check: Bool
+        var isChecked: Bool
+
+        mutating func toggleIsChecked() {
+            isChecked.toggle()
+        }
     }
 
     // アクセサリボタンがタップされたセルのインデックスパスを保持するプロパティ
@@ -28,10 +32,10 @@ class TableViewController: UITableViewController {
 
         // アイテムの初期化
         items = [
-            Item(name: "りんご", check: false),
-            Item(name: "みかん", check: true),
-            Item(name: "バナナ", check: false),
-            Item(name: "パイナップル", check: true)
+            Item(name: "りんご", isChecked: false),
+            Item(name: "みかん", isChecked: true),
+            Item(name: "バナナ", isChecked: false),
+            Item(name: "パイナップル", isChecked: true)
         ]
     }
 
@@ -47,7 +51,7 @@ class TableViewController: UITableViewController {
         // アイテムを取得
         let item = items[indexPath.row]
         // セルの表示を設定するメソッドを呼び出してセルを更新
-        cell.configure(name: item.name, isChecked: item.check)
+        cell.configure(item: item)
         // 更新されたセルを返す
         return cell
     }
@@ -55,14 +59,13 @@ class TableViewController: UITableViewController {
     // ユーザーがテーブルビューのセルを選択した時の処理
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // チェック状態を反転させる
-        items[indexPath.row].check.toggle()
+        items[indexPath.row].toggleIsChecked()
         // テーブルビューのセルを再読み込みして更新する
         tableView.reloadRows(at: [indexPath], with: .automatic)
     }
 
     // アクセサリボタンがタップされた時の処理
     override func tableView(_ tableView: UITableView, accessoryButtonTappedForRowWith indexPath: IndexPath) {
-        print("accessoryButtonTappedForRowWith")
         // 編集対象のセルのインデックスパスを保持する
         editIndexPath = indexPath
         // 編集画面に遷移する
@@ -90,11 +93,8 @@ class TableViewController: UITableViewController {
                 // 編集モードを設定する
                 if let indexPath = sender as? IndexPath {
                     let item = self.items[indexPath.row]
-                    // 編集対象のアイテム名を渡す
-                    add.mode = .edit
-                    add.name = item.name
+                    add.mode = .edit(item)
                 }
-                break
             default:
                 break
             }
@@ -107,7 +107,7 @@ class TableViewController: UITableViewController {
     @IBAction func exitFromAddBySave(segue: UIStoryboardSegue) {
         if let add = segue.source as? AddItemViewController {
             // アイテム名を追加する
-            let item = Item(name: add.name, check: false)
+            guard let item = add.editedItem else { return }
             items.append(item)
             let indexPath = IndexPath(row: items.count - 1, section: 0)
             // テーブルビューに行を追加する
@@ -121,8 +121,8 @@ class TableViewController: UITableViewController {
     @IBAction func exitFromEditBySave(segue: UIStoryboardSegue) {
         if let add = segue.source as? AddItemViewController {
             if let indexPath = editIndexPath {
-                // アイテム名を更新する
-                items[indexPath.row].name = add.name
+                guard let editedItem = add.editedItem else { return }
+                items[indexPath.row] = editedItem
                 // テーブルビューの行を再読み込みする
                 tableView.reloadRows(at: [indexPath], with: .automatic)
             }
